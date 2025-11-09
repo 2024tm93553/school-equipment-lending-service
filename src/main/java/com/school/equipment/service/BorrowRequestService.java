@@ -11,10 +11,8 @@ import com.school.equipment.repository.EquipmentBookingRepository;
 import com.school.equipment.repository.EquipmentRepository;
 import com.school.equipment.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,17 +21,20 @@ import java.util.stream.Collectors;
 @Service
 public class BorrowRequestService {
 
-    @Autowired
-    private BorrowRequestRepository borrowRequestRepository;
+    private final BorrowRequestRepository borrowRequestRepository;
+    private final EquipmentRepository equipmentRepository;
+    private final UserRepository userRepository;
+    private final EquipmentBookingRepository equipmentBookingRepository;
 
-    @Autowired
-    private EquipmentRepository equipmentRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private EquipmentBookingRepository equipmentBookingRepository;
+    public BorrowRequestService(BorrowRequestRepository borrowRequestRepository,
+                                EquipmentRepository equipmentRepository,
+                                UserRepository userRepository,
+                                EquipmentBookingRepository equipmentBookingRepository) {
+        this.borrowRequestRepository = borrowRequestRepository;
+        this.equipmentRepository = equipmentRepository;
+        this.userRepository = userRepository;
+        this.equipmentBookingRepository = equipmentBookingRepository;
+    }
 
     @Transactional
     public CreateResponse createBorrowRequest(CreateRequest request, Long userId) {
@@ -62,8 +63,8 @@ public class BorrowRequestService {
             throw new InvalidRequestException("From date cannot be in the past");
         }
 
-        if (!isEquipmentAvailable(request.getEquipmentId(), request.getQuantity(),
-                                request.getFromDate(), request.getToDate())) {
+        if (isEquipmentAvailable(request.getEquipmentId(), request.getQuantity(),
+                request.getFromDate(), request.getToDate())) {
             log.warn("Borrow request failed - equipment not available for requested period. Equipment: {}, Quantity: {}",
                     request.getEquipmentId(), request.getQuantity());
             throw new EquipmentNotAvailableException("Not enough equipment available for the requested period");
@@ -112,10 +113,10 @@ public class BorrowRequestService {
                 return new ResourceNotFoundException("User not found with id: " + approveRequest.getApprovedBy());
             });
 
-        if (!isEquipmentAvailable(borrowRequest.getEquipment().getEquipmentId(),
-                                borrowRequest.getQuantity(),
-                                borrowRequest.getFromDate(),
-                                borrowRequest.getToDate())) {
+        if (isEquipmentAvailable(borrowRequest.getEquipment().getEquipmentId(),
+                borrowRequest.getQuantity(),
+                borrowRequest.getFromDate(),
+                borrowRequest.getToDate())) {
             log.warn("Failed to approve request - equipment no longer available: requestId={}", requestId);
             throw new EquipmentNotAvailableException("Equipment no longer available for the requested period");
         }
@@ -234,7 +235,7 @@ public class BorrowRequestService {
     private boolean isEquipmentAvailable(Long equipmentId, Integer requestedQuantity, LocalDate fromDate, LocalDate toDate) {
         Equipment equipment = equipmentRepository.findById(equipmentId).orElse(null);
         if (equipment == null) {
-            return false;
+            return true;
         }
 
         LocalDate date = fromDate;
@@ -246,13 +247,13 @@ public class BorrowRequestService {
 
             int availableForDate = equipment.getTotalQuantity() - bookedQuantity;
             if (availableForDate < requestedQuantity) {
-                return false;
+                return true;
             }
 
             date = date.plusDays(1);
         }
 
-        return true;
+        return false;
     }
 
     private void createBookingEntries(BorrowRequest borrowRequest) {

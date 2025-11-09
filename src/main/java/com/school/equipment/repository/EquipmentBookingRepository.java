@@ -12,17 +12,10 @@ import java.util.List;
 @Repository
 public interface EquipmentBookingRepository extends JpaRepository<EquipmentBooking, Long> {
 
-    @Query("SELECT eb FROM EquipmentBooking eb WHERE eb.equipment.equipmentId = :equipmentId " +
-           "AND eb.bookingDate BETWEEN :fromDate AND :toDate " +
-           "AND eb.status = 'ACTIVE'")
-    List<EquipmentBooking> findBookingsByEquipmentAndDateRange(@Param("equipmentId") Long equipmentId,
-                                                              @Param("fromDate") LocalDate fromDate,
-                                                              @Param("toDate") LocalDate toDate);
-
     @Query("SELECT SUM(eb.quantity) FROM EquipmentBooking eb WHERE eb.equipment.equipmentId = :equipmentId " +
-           "AND eb.bookingDate = :date AND eb.status = 'ACTIVE'")
+            "AND eb.bookingDate = :date AND eb.status = 'ACTIVE'")
     Integer getTotalBookedQuantityForDate(@Param("equipmentId") Long equipmentId,
-                                        @Param("date") LocalDate date);
+                                          @Param("date") LocalDate date);
 
     List<EquipmentBooking> findByBorrowRequestRequestId(Long requestId);
 }

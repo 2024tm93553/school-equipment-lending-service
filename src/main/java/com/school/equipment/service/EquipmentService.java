@@ -10,9 +10,7 @@ import com.school.equipment.exception.ResourceNotFoundException;
 import com.school.equipment.repository.EquipmentRepository;
 import com.school.equipment.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,11 +18,14 @@ import java.util.stream.Collectors;
 @Service
 public class EquipmentService {
 
-    @Autowired
-    private EquipmentRepository equipmentRepository;
+    private final EquipmentRepository equipmentRepository;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private UserRepository userRepository;
+    public EquipmentService(EquipmentRepository equipmentRepository,
+                           UserRepository userRepository) {
+        this.equipmentRepository = equipmentRepository;
+        this.userRepository = userRepository;
+    }
 
     public EquipmentCreateResponse createEquipment(EquipmentCreateRequest request, Long createdByUserId) {
         log.info("Creating new equipment - name: {}, category: {}, quantity: {}, createdBy: {}",
@@ -36,15 +37,7 @@ public class EquipmentService {
                 return new ResourceNotFoundException("User not found with id: " + createdByUserId);
             });
 
-        Equipment equipment = new Equipment();
-        equipment.setName(request.getName());
-        equipment.setCategory(request.getCategory());
-        equipment.setConditionStatus(request.getConditionStatus());
-        equipment.setTotalQuantity(request.getTotalQuantity());
-        equipment.setAvailableQuantity(request.getTotalQuantity()); // Initially all are available
-        equipment.setAvailability(request.getAvailability());
-        equipment.setDescription(request.getDescription());
-        equipment.setCreatedBy(createdBy);
+        Equipment equipment = getEquipment(request, createdBy);
 
         Equipment savedEquipment = equipmentRepository.save(equipment);
         log.info("Equipment created successfully - equipmentId: {}, name: {}",
@@ -54,6 +47,19 @@ public class EquipmentService {
             savedEquipment.getEquipmentId(),
             "Equipment added successfully"
         );
+    }
+
+    private static Equipment getEquipment(EquipmentCreateRequest request, User createdBy) {
+        Equipment equipment = new Equipment();
+        equipment.setName(request.getName());
+        equipment.setCategory(request.getCategory());
+        equipment.setConditionStatus(request.getConditionStatus());
+        equipment.setTotalQuantity(request.getTotalQuantity());
+        equipment.setAvailableQuantity(request.getTotalQuantity()); // Initially all are available
+        equipment.setAvailability(request.getAvailability());
+        equipment.setDescription(request.getDescription());
+        equipment.setCreatedBy(createdBy);
+        return equipment;
     }
 
     public EquipmentResponse updateEquipment(Long equipmentId, EquipmentUpdateRequest request) {

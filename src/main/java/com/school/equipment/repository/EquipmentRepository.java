@@ -10,11 +10,6 @@ import java.util.List;
 
 @Repository
 public interface EquipmentRepository extends JpaRepository<Equipment, Long> {
-    List<Equipment> findByCategory(String category);
-
-    @Query("SELECT e FROM Equipment e WHERE e.availableQuantity > 0")
-    List<Equipment> findAvailableEquipment();
-
     @Query("SELECT e FROM Equipment e WHERE " +
            "(:category IS NULL OR e.category = :category) AND " +
            "(:availableOnly = false OR e.availableQuantity > 0) AND " +

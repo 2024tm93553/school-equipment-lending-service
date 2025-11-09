@@ -6,12 +6,10 @@ import com.school.equipment.security.AuthenticationHelper;
 import com.school.equipment.service.BorrowRequestService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @Slf4j
@@ -20,8 +18,11 @@ import java.util.List;
 @CrossOrigin(origins = "*")
 public class BorrowRequestController {
 
-    @Autowired
-    private BorrowRequestService borrowRequestService;
+    private final BorrowRequestService borrowRequestService;
+
+    public BorrowRequestController(BorrowRequestService borrowRequestService) {
+        this.borrowRequestService = borrowRequestService;
+    }
 
     @PostMapping
     @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER')")
@@ -33,24 +34,28 @@ public class BorrowRequestController {
             CreateResponse response = borrowRequestService.createBorrowRequest(request, userId);
             return ResponseEntity.ok(response);
         }
+
     @GetMapping("/{id}")
     public ResponseEntity<BorrowRequestResponse> getRequestById(@PathVariable Long id) {
             log.debug("Fetch request received for requestId: {}", id);
             BorrowRequestResponse response = borrowRequestService.getRequestById(id);
             return ResponseEntity.ok(response);
         }
+
     @GetMapping("/my")
     public ResponseEntity<List<BorrowRequestResponse>> getMyRequests(Authentication authentication) {
             Long userId = AuthenticationHelper.getUserIdFromAuthentication(authentication);
             List<BorrowRequestResponse> response = borrowRequestService.getMyRequests(userId);
             return ResponseEntity.ok(response);
         }
+
     @GetMapping("/pending")
     @PreAuthorize("hasAnyRole('ADMIN', 'LAB_ASSISTANT')")
     public ResponseEntity<List<BorrowRequestResponse>> getPendingRequests() {
             List<BorrowRequestResponse> response = borrowRequestService.getPendingRequests();
             return ResponseEntity.ok(response);
         }
+
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'LAB_ASSISTANT')")
     public ResponseEntity<List<BorrowRequestResponse>> getAllRequests(
@@ -64,6 +69,7 @@ public class BorrowRequestController {
                     borrowRequestService.getRequestsWithFilters(statusEnum, userId);
             return ResponseEntity.ok(response);
         }
+
     @PutMapping("/{id}/approve")
     @PreAuthorize("hasAnyRole('ADMIN', 'LAB_ASSISTANT')")
     public ResponseEntity<BorrowRequestResponse> approveRequest(
@@ -73,6 +79,7 @@ public class BorrowRequestController {
             BorrowRequestResponse response = borrowRequestService.approveRequest(id, request);
             return ResponseEntity.ok(response);
         }
+
     @PutMapping("/{id}/reject")
     @PreAuthorize("hasAnyRole('ADMIN', 'LAB_ASSISTANT')")
     public ResponseEntity<BorrowRequestResponse> rejectRequest(
@@ -82,6 +89,7 @@ public class BorrowRequestController {
             BorrowRequestResponse response = borrowRequestService.rejectRequest(id, request);
             return ResponseEntity.ok(response);
         }
+
     @PutMapping("/{id}/return")
     @PreAuthorize("hasAnyRole('ADMIN', 'LAB_ASSISTANT')")
     public ResponseEntity<BorrowRequestResponse> markAsReturned(
