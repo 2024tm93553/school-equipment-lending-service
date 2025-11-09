@@ -35,6 +35,9 @@ public class Equipment {
     @Column(name = "available_quantity", nullable = false)
     private Integer availableQuantity;
 
+    @Column(name = "availability", nullable = false)
+    private Boolean availability = true;
+
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 

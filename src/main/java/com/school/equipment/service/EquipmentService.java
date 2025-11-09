@@ -33,6 +33,7 @@ public class EquipmentService {
         equipment.setConditionStatus(request.getConditionStatus());
         equipment.setTotalQuantity(request.getTotalQuantity());
         equipment.setAvailableQuantity(request.getTotalQuantity()); // Initially all are available
+        equipment.setAvailability(request.getAvailability());
         equipment.setDescription(request.getDescription());
         equipment.setCreatedBy(createdBy);
 
@@ -57,11 +58,11 @@ public class EquipmentService {
         if (request.getConditionStatus() != null) {
             equipment.setConditionStatus(request.getConditionStatus());
         }
-        if (request.getTotalQuantity() != null) {
-            // Update available quantity proportionally
-            int difference = request.getTotalQuantity() - equipment.getTotalQuantity();
-            equipment.setTotalQuantity(request.getTotalQuantity());
-            equipment.setAvailableQuantity(Math.max(0, equipment.getAvailableQuantity() + difference));
+        equipment.setTotalQuantity(request.getTotalQuantity());
+        equipment.setAvailableQuantity(request.getAvailableQuantity());
+
+        if (request.getAvailability() != null) {
+            equipment.setAvailability(request.getAvailability());
         }
         if (request.getDescription() != null) {
             equipment.setDescription(request.getDescription());
@@ -104,6 +105,7 @@ public class EquipmentService {
             equipment.getConditionStatus(),
             equipment.getTotalQuantity(),
             equipment.getAvailableQuantity(),
+            equipment.getAvailability(),
             equipment.getDescription(),
             equipment.getCreatedBy() != null ? equipment.getCreatedBy().getFullName() : null,
             equipment.getCreatedAt() != null ? equipment.getCreatedAt().toString() : null,

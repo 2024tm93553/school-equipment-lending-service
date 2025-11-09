@@ -23,5 +23,8 @@ public class EquipmentCreateRequest {
     @Min(value = 1, message = "Total quantity must be at least 1")
     private Integer totalQuantity;
 
+    @NotNull(message = "Availability is required")
+    private Boolean availability = true;
+
     private String description;
 }

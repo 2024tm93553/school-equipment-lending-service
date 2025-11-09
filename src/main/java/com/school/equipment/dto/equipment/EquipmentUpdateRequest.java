@@ -13,5 +13,7 @@ public class EquipmentUpdateRequest {
         private String category;
         private String conditionStatus;
         private Integer totalQuantity;
+        private Integer availableQuantity;
+        private Boolean availability;
         private String description;
 }

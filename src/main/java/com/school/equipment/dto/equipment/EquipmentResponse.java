@@ -14,6 +14,7 @@ public class EquipmentResponse {
         private String conditionStatus;
         private Integer totalQuantity;
         private Integer availableQuantity;
+        private Boolean availability;
         private String description;
         private String createdBy;
         private String createdAt;
