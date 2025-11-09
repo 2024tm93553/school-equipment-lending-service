@@ -1,6 +1,6 @@
 package com.school.equipment.dto.user;
 
-import com.school.equipment.dto.enums.Role;
+import com.school.equipment.entity.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

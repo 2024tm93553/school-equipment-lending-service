@@ -1,6 +1,6 @@
 package com.school.equipment.dto.user;
 
-import com.school.equipment.dto.enums.Role;
+import com.school.equipment.entity.Role;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
