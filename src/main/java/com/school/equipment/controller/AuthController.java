@@ -13,9 +13,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/auth")
 @CrossOrigin(origins = "*")
@@ -46,12 +48,11 @@ public class AuthController {
                     content = @Content
             )
     })
-
     @PostMapping("/signup")
     public ResponseEntity<UserResponse> signup(@Valid @RequestBody RegisterRequest request) throws UserAlreadyExistsException {
+        log.info("Signup request received for username: {}", request.getUsername());
         UserResponse response = authService.register(request);
         return ResponseEntity.ok(response);
-
     }
 
     @Operation(
@@ -75,9 +76,8 @@ public class AuthController {
     })
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) throws InvalidCredentialsException {
-        System.out.println("Login attempt for user: " + request.getUsername());
+        log.info("Login request received for username: {}", request.getUsername());
         LoginResponse response = authService.login(request);
         return ResponseEntity.ok(response);
-
     }
 }

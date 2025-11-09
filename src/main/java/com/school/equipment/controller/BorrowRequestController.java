@@ -5,6 +5,7 @@ import com.school.equipment.entity.Status;
 import com.school.equipment.security.AuthenticationHelper;
 import com.school.equipment.service.BorrowRequestService;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/requests")
 @CrossOrigin(origins = "*")
@@ -27,10 +29,12 @@ public class BorrowRequestController {
             @Valid @RequestBody CreateRequest request,
             Authentication authentication) {
         try {
+            log.info("Borrow request creation received for equipmentId: {}", request.getEquipmentId());
             Long userId = AuthenticationHelper.getUserIdFromAuthentication(authentication);
             CreateResponse response = borrowRequestService.createBorrowRequest(request, userId);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
+            log.error("Failed to create borrow request: {}", e.getMessage());
             return ResponseEntity.badRequest().build();
         }
     }
@@ -38,9 +42,11 @@ public class BorrowRequestController {
     @GetMapping("/{id}")
     public ResponseEntity<BorrowRequestResponse> getRequestById(@PathVariable Long id) {
         try {
+            log.debug("Fetch request received for requestId: {}", id);
             BorrowRequestResponse response = borrowRequestService.getRequestById(id);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
+            log.error("Failed to fetch borrow request {}: {}", id, e.getMessage());
             return ResponseEntity.notFound().build();
         }
     }
@@ -91,9 +97,11 @@ public class BorrowRequestController {
             @PathVariable Long id,
             @Valid @RequestBody ApproveRequest request) {
         try {
+            log.info("Approve request received for requestId: {}", id);
             BorrowRequestResponse response = borrowRequestService.approveRequest(id, request);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
+            log.error("Failed to approve request {}: {}", id, e.getMessage());
             return ResponseEntity.badRequest().build();
         }
     }
@@ -104,9 +112,11 @@ public class BorrowRequestController {
             @PathVariable Long id,
             @Valid @RequestBody RejectRequest request) {
         try {
+            log.info("Reject request received for requestId: {}", id);
             BorrowRequestResponse response = borrowRequestService.rejectRequest(id, request);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
+            log.error("Failed to reject request {}: {}", id, e.getMessage());
             return ResponseEntity.badRequest().build();
         }
     }
@@ -117,9 +127,11 @@ public class BorrowRequestController {
             @PathVariable Long id,
             @Valid @RequestBody ReturnRequest request) {
         try {
+            log.info("Return request received for requestId: {}", id);
             BorrowRequestResponse response = borrowRequestService.markAsReturned(id, request);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
+            log.error("Failed to mark request {} as returned: {}", id, e.getMessage());
             return ResponseEntity.badRequest().build();
         }
     }

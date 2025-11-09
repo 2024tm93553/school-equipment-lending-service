@@ -8,12 +8,14 @@ import com.school.equipment.entity.Equipment;
 import com.school.equipment.entity.User;
 import com.school.equipment.repository.EquipmentRepository;
 import com.school.equipment.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class EquipmentService {
 
@@ -24,8 +26,14 @@ public class EquipmentService {
     private UserRepository userRepository;
 
     public EquipmentCreateResponse createEquipment(EquipmentCreateRequest request, Long createdByUserId) {
+        log.info("Creating new equipment - name: {}, category: {}, quantity: {}, createdBy: {}",
+                request.getName(), request.getCategory(), request.getTotalQuantity(), createdByUserId);
+
         User createdBy = userRepository.findById(createdByUserId)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+            .orElseThrow(() -> {
+                log.error("Failed to create equipment - user not found: {}", createdByUserId);
+                return new RuntimeException("User not found");
+            });
 
         Equipment equipment = new Equipment();
         equipment.setName(request.getName());
@@ -38,6 +46,8 @@ public class EquipmentService {
         equipment.setCreatedBy(createdBy);
 
         Equipment savedEquipment = equipmentRepository.save(equipment);
+        log.info("Equipment created successfully - equipmentId: {}, name: {}",
+                savedEquipment.getEquipmentId(), savedEquipment.getName());
 
         return new EquipmentCreateResponse(
             savedEquipment.getEquipmentId(),
@@ -46,8 +56,13 @@ public class EquipmentService {
     }
 
     public EquipmentResponse updateEquipment(Long equipmentId, EquipmentUpdateRequest request) {
+        log.info("Updating equipment - equipmentId: {}", equipmentId);
+
         Equipment equipment = equipmentRepository.findById(equipmentId)
-            .orElseThrow(() -> new RuntimeException("Equipment not found"));
+            .orElseThrow(() -> {
+                log.error("Failed to update equipment - equipment not found: {}", equipmentId);
+                return new RuntimeException("Equipment not found");
+            });
 
         if (request.getName() != null) {
             equipment.setName(request.getName());
@@ -69,28 +84,44 @@ public class EquipmentService {
         }
 
         Equipment savedEquipment = equipmentRepository.save(equipment);
+        log.info("Equipment updated successfully - equipmentId: {}, name: {}",
+                savedEquipment.getEquipmentId(), savedEquipment.getName());
         return mapToResponse(savedEquipment);
     }
 
     public void deleteEquipment(Long equipmentId) {
+        log.info("Deleting equipment - equipmentId: {}", equipmentId);
+
         if (!equipmentRepository.existsById(equipmentId)) {
+            log.error("Failed to delete equipment - equipment not found: {}", equipmentId);
             throw new RuntimeException("Equipment not found");
         }
         equipmentRepository.deleteById(equipmentId);
+        log.info("Equipment deleted successfully - equipmentId: {}", equipmentId);
     }
 
     public EquipmentResponse getEquipmentById(Long equipmentId) {
+        log.debug("Fetching equipment by id: {}", equipmentId);
+
         Equipment equipment = equipmentRepository.findById(equipmentId)
-            .orElseThrow(() -> new RuntimeException("Equipment not found"));
+            .orElseThrow(() -> {
+                log.error("Equipment not found: {}", equipmentId);
+                return new RuntimeException("Equipment not found");
+            });
         return mapToResponse(equipment);
     }
 
     public List<EquipmentResponse> getAllEquipment(String category, Boolean availableOnly, String search) {
+        log.debug("Fetching all equipment - category: {}, availableOnly: {}, search: {}",
+                category, availableOnly, search);
+
         List<Equipment> equipmentList = equipmentRepository.findEquipmentWithFilters(
             category,
             availableOnly != null ? availableOnly : false,
             search
         );
+
+        log.info("Retrieved {} equipment items", equipmentList.size());
 
         return equipmentList.stream()
             .map(this::mapToResponse)

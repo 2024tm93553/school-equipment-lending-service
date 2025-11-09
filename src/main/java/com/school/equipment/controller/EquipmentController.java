@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/equipment")
 @CrossOrigin(origins = "*")
@@ -46,6 +48,7 @@ public class EquipmentController {
             @Parameter(description = "Equipment creation request", required = true)
             @Valid @RequestBody EquipmentCreateRequest request,
             Authentication authentication) {
+            log.info("Equipment creation request received: {}", request.getName());
             Long userId = AuthenticationHelper.getUserIdFromAuthentication(authentication);
             EquipmentCreateResponse response = equipmentService.createEquipment(request, userId);
             return ResponseEntity.ok(response);
@@ -69,7 +72,7 @@ public class EquipmentController {
             @PathVariable Long id,
             @Parameter(description = "Equipment update request", required = true)
             @Valid @RequestBody EquipmentUpdateRequest request) {
-
+            log.info("Equipment update request received for id: {}", id);
             EquipmentResponse response = equipmentService.updateEquipment(id, request);
             return ResponseEntity.ok(response);
 
@@ -89,7 +92,7 @@ public class EquipmentController {
     public ResponseEntity<Void> deleteEquipment(
             @Parameter(description = "Equipment ID", required = true)
             @PathVariable Long id) {
-
+            log.info("Equipment deletion request received for id: {}", id);
             equipmentService.deleteEquipment(id);
             return ResponseEntity.noContent().build();
 

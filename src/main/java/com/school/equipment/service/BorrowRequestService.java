@@ -6,6 +6,7 @@ import com.school.equipment.repository.BorrowRequestRepository;
 import com.school.equipment.repository.EquipmentBookingRepository;
 import com.school.equipment.repository.EquipmentRepository;
 import com.school.equipment.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +15,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class BorrowRequestService {
 
@@ -31,30 +33,38 @@ public class BorrowRequestService {
 
     @Transactional
     public CreateResponse createBorrowRequest(CreateRequest request, Long userId) {
-        // Validate equipment exists
+        log.info("Creating borrow request - equipmentId: {}, userId: {}, quantity: {}, fromDate: {}, toDate: {}",
+                request.getEquipmentId(), userId, request.getQuantity(), request.getFromDate(), request.getToDate());
         Equipment equipment = equipmentRepository.findById(request.getEquipmentId())
-            .orElseThrow(() -> new RuntimeException("Equipment not found"));
+            .orElseThrow(() -> {
+                log.error("Failed to create borrow request - equipment not found: {}", request.getEquipmentId());
+                return new RuntimeException("Equipment not found");
+            });
 
-        // Validate user exists
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+            .orElseThrow(() -> {
+                log.error("Failed to create borrow request - user not found: {}", userId);
+                return new RuntimeException("User not found");
+            });
 
-        // Validate dates
         if (request.getFromDate().isAfter(request.getToDate())) {
+            log.warn("Borrow request validation failed - from date after to date: {} > {}",
+                    request.getFromDate(), request.getToDate());
             throw new RuntimeException("From date cannot be after to date");
         }
 
         if (request.getFromDate().isBefore(LocalDate.now())) {
+            log.warn("Borrow request validation failed - from date in the past: {}", request.getFromDate());
             throw new RuntimeException("From date cannot be in the past");
         }
 
-        // Check if enough equipment is available for the requested period
         if (!isEquipmentAvailable(request.getEquipmentId(), request.getQuantity(),
                                 request.getFromDate(), request.getToDate())) {
+            log.warn("Borrow request failed - equipment not available for requested period. Equipment: {}, Quantity: {}",
+                    request.getEquipmentId(), request.getQuantity());
             throw new RuntimeException("Not enough equipment available for the requested period");
         }
 
-        // Create borrow request
         BorrowRequest borrowRequest = new BorrowRequest();
         borrowRequest.setEquipment(equipment);
         borrowRequest.setRequestedBy(user);
@@ -65,6 +75,8 @@ public class BorrowRequestService {
         borrowRequest.setStatus(Status.PENDING);
 
         BorrowRequest savedRequest = borrowRequestRepository.save(borrowRequest);
+        log.info("Borrow request created successfully - requestId: {}, status: {}",
+                savedRequest.getRequestId(), savedRequest.getStatus());
 
         return new CreateResponse(
             savedRequest.getRequestId(),
@@ -75,47 +87,64 @@ public class BorrowRequestService {
 
     @Transactional
     public BorrowRequestResponse approveRequest(Long requestId, ApproveRequest approveRequest) {
+        log.info("Approving borrow request - requestId: {}, approvedBy: {}",
+                requestId, approveRequest.getApprovedBy());
+
         BorrowRequest borrowRequest = borrowRequestRepository.findById(requestId)
-            .orElseThrow(() -> new RuntimeException("Request not found"));
+            .orElseThrow(() -> {
+                log.error("Failed to approve request - request not found: {}", requestId);
+                return new RuntimeException("Request not found");
+            });
 
         if (borrowRequest.getStatus() != Status.PENDING) {
+            log.warn("Failed to approve request - request not in PENDING status: requestId={}, currentStatus={}",
+                    requestId, borrowRequest.getStatus());
             throw new RuntimeException("Only pending requests can be approved");
         }
 
         User approvedBy = userRepository.findById(approveRequest.getApprovedBy())
-            .orElseThrow(() -> new RuntimeException("Approver not found"));
+            .orElseThrow(() -> {
+                log.error("Failed to approve request - approver not found: {}", approveRequest.getApprovedBy());
+                return new RuntimeException("Approver not found");
+            });
 
-        // Double-check availability before approval
         if (!isEquipmentAvailable(borrowRequest.getEquipment().getEquipmentId(),
                                 borrowRequest.getQuantity(),
                                 borrowRequest.getFromDate(),
                                 borrowRequest.getToDate())) {
+            log.warn("Failed to approve request - equipment no longer available: requestId={}", requestId);
             throw new RuntimeException("Equipment no longer available for the requested period");
         }
 
-        // Update request status
         borrowRequest.setStatus(Status.APPROVED);
         borrowRequest.setApprovedBy(approvedBy);
         borrowRequest.setRemarks(approveRequest.getRemarks());
 
-        // Create booking entries for each date
         createBookingEntries(borrowRequest);
-
-        // Update equipment available quantity
         Equipment equipment = borrowRequest.getEquipment();
         equipment.setAvailableQuantity(equipment.getAvailableQuantity() - borrowRequest.getQuantity());
         equipmentRepository.save(equipment);
 
         BorrowRequest savedRequest = borrowRequestRepository.save(borrowRequest);
+        log.info("Borrow request approved successfully - requestId: {}, equipmentId: {}, quantity: {}",
+                savedRequest.getRequestId(), savedRequest.getEquipment().getEquipmentId(),
+                savedRequest.getQuantity());
         return mapToResponse(savedRequest);
     }
 
     @Transactional
     public BorrowRequestResponse rejectRequest(Long requestId, RejectRequest rejectRequest) {
+        log.info("Rejecting borrow request - requestId: {}, remarks: {}", requestId, rejectRequest.getRemarks());
+
         BorrowRequest borrowRequest = borrowRequestRepository.findById(requestId)
-            .orElseThrow(() -> new RuntimeException("Request not found"));
+            .orElseThrow(() -> {
+                log.error("Failed to reject request - request not found: {}", requestId);
+                return new RuntimeException("Request not found");
+            });
 
         if (borrowRequest.getStatus() != Status.PENDING) {
+            log.warn("Failed to reject request - request not in PENDING status: requestId={}, currentStatus={}",
+                    requestId, borrowRequest.getStatus());
             throw new RuntimeException("Only pending requests can be rejected");
         }
 
@@ -123,15 +152,24 @@ public class BorrowRequestService {
         borrowRequest.setRemarks(rejectRequest.getRemarks());
 
         BorrowRequest savedRequest = borrowRequestRepository.save(borrowRequest);
+        log.info("Borrow request rejected successfully - requestId: {}", savedRequest.getRequestId());
         return mapToResponse(savedRequest);
     }
 
     @Transactional
     public BorrowRequestResponse markAsReturned(Long requestId, ReturnRequest returnRequest) {
+        log.info("Marking borrow request as returned - requestId: {}, returnDate: {}",
+                requestId, returnRequest.getReturnDate());
+
         BorrowRequest borrowRequest = borrowRequestRepository.findById(requestId)
-            .orElseThrow(() -> new RuntimeException("Request not found"));
+            .orElseThrow(() -> {
+                log.error("Failed to mark as returned - request not found: {}", requestId);
+                return new RuntimeException("Request not found");
+            });
 
         if (borrowRequest.getStatus() != Status.APPROVED) {
+            log.warn("Failed to mark as returned - request not in APPROVED status: requestId={}, currentStatus={}",
+                    requestId, borrowRequest.getStatus());
             throw new RuntimeException("Only approved requests can be marked as returned");
         }
 
@@ -139,41 +177,53 @@ public class BorrowRequestService {
         borrowRequest.setReturnDate(returnRequest.getReturnDate());
         borrowRequest.setConditionAfterUse(returnRequest.getConditionAfterUse());
 
-        // Release booking entries
         List<EquipmentBooking> bookings = equipmentBookingRepository.findByBorrowRequestRequestId(requestId);
         bookings.forEach(booking -> booking.setStatus(EquipmentBooking.Status.RELEASED));
         equipmentBookingRepository.saveAll(bookings);
 
-        // Update equipment available quantity
         Equipment equipment = borrowRequest.getEquipment();
         equipment.setAvailableQuantity(equipment.getAvailableQuantity() + borrowRequest.getQuantity());
         equipmentRepository.save(equipment);
 
         BorrowRequest savedRequest = borrowRequestRepository.save(borrowRequest);
+        log.info("Borrow request marked as returned successfully - requestId: {}, equipmentId: {}, quantity: {}, condition: {}",
+                savedRequest.getRequestId(), savedRequest.getEquipment().getEquipmentId(),
+                savedRequest.getQuantity(), savedRequest.getConditionAfterUse());
         return mapToResponse(savedRequest);
     }
 
     public BorrowRequestResponse getRequestById(Long requestId) {
+        log.debug("Fetching borrow request by id: {}", requestId);
         BorrowRequest borrowRequest = borrowRequestRepository.findById(requestId)
             .orElseThrow(() -> new RuntimeException("Request not found"));
         return mapToResponse(borrowRequest);
     }
 
     public List<BorrowRequestResponse> getMyRequests(Long userId) {
+        log.debug("Fetching borrow requests for user: {}", userId);
+
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+            .orElseThrow(() -> {
+                log.error("Failed to fetch user requests - user not found: {}", userId);
+                return new RuntimeException("User not found");
+            });
 
         List<BorrowRequest> requests = borrowRequestRepository.findByRequestedBy(user);
+        log.info("Retrieved {} borrow requests for user: {}", requests.size(), userId);
         return requests.stream().map(this::mapToResponse).collect(Collectors.toList());
     }
 
     public List<BorrowRequestResponse> getPendingRequests() {
+        log.debug("Fetching all pending borrow requests");
         List<BorrowRequest> requests = borrowRequestRepository.findByStatus(Status.PENDING);
+        log.info("Retrieved {} pending borrow requests", requests.size());
         return requests.stream().map(this::mapToResponse).collect(Collectors.toList());
     }
 
     public List<BorrowRequestResponse> getRequestsWithFilters(Status status, Long userId) {
+        log.debug("Fetching borrow requests with filters - status: {}, userId: {}", status, userId);
         List<BorrowRequest> requests = borrowRequestRepository.findRequestsWithFilters(status, userId);
+        log.info("Retrieved {} borrow requests with filters", requests.size());
         return requests.stream().map(this::mapToResponse).collect(Collectors.toList());
     }
 
@@ -183,7 +233,6 @@ public class BorrowRequestService {
             return false;
         }
 
-        // Check each date in the range
         LocalDate date = fromDate;
         while (!date.isAfter(toDate)) {
             Integer bookedQuantity = equipmentBookingRepository.getTotalBookedQuantityForDate(equipmentId, date);
@@ -203,6 +252,8 @@ public class BorrowRequestService {
     }
 
     private void createBookingEntries(BorrowRequest borrowRequest) {
+        log.debug("Creating booking entries for request: {}", borrowRequest.getRequestId());
+        int bookingCount = 0;
         LocalDate date = borrowRequest.getFromDate();
         while (!date.isAfter(borrowRequest.getToDate())) {
             EquipmentBooking booking = new EquipmentBooking();
@@ -213,8 +264,10 @@ public class BorrowRequestService {
             booking.setStatus(EquipmentBooking.Status.ACTIVE);
 
             equipmentBookingRepository.save(booking);
+            bookingCount++;
             date = date.plusDays(1);
         }
+        log.info("Created {} booking entries for requestId: {}", bookingCount, borrowRequest.getRequestId());
     }
 
     private BorrowRequestResponse mapToResponse(BorrowRequest borrowRequest) {

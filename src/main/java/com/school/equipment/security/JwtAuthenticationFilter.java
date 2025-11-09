@@ -4,6 +4,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -14,6 +15,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Collections;
 
+@Slf4j
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
@@ -33,7 +35,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             try {
                 username = jwtUtil.getUsernameFromToken(token);
             } catch (Exception e) {
-                System.err.println("Error extracting username from token: " + e.getMessage());
+                log.error("Error extracting username from token: {}", e.getMessage());
             }
         }
 
@@ -42,9 +44,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String role = jwtUtil.getRoleFromToken(token);
                 Long userId = jwtUtil.getUserIdFromToken(token);
 
-                System.out.println("JWT Filter - Username: " + username + ", Role: " + role + ", UserId: " + userId);
-                System.out.println("Setting authority: ROLE_" + role);
-
+                log.debug("JWT authentication - username: {}, role: {}, userId: {}", username, role, userId);
                 UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
                         username,
@@ -56,9 +56,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 authentication.setDetails(userId);
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
-                System.out.println("Authentication set in SecurityContext. Authorities: " + authentication.getAuthorities());
+                log.info("Authentication successful for user: {} with role: {}", username, role);
             } else {
-                System.err.println("Token validation failed for username: " + username);
+                log.warn("Token validation failed for username: {}", username);
             }
         }
 
