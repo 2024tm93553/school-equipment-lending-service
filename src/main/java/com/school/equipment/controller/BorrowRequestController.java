@@ -22,7 +22,7 @@ public class BorrowRequestController {
     private BorrowRequestService borrowRequestService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER')")
+    @PreAuthorize("hasAnyRole('STUDENT')")
     public ResponseEntity<CreateResponse> createBorrowRequest(
             @Valid @RequestBody CreateRequest request,
             Authentication authentication) {

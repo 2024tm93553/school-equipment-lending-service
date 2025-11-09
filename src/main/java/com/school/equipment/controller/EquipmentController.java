@@ -63,6 +63,7 @@ public class EquipmentController {
             }
     )
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<EquipmentResponse> updateEquipment(
             @Parameter(description = "Equipment ID", required = true)
             @PathVariable Long id,
@@ -84,6 +85,7 @@ public class EquipmentController {
             }
     )
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteEquipment(
             @Parameter(description = "Equipment ID", required = true)
             @PathVariable Long id) {

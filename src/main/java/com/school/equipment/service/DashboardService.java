@@ -4,7 +4,6 @@ import com.school.equipment.dto.dashboard.AvailabilityResponse;
 import com.school.equipment.dto.dashboard.DateAvailability;
 import com.school.equipment.dto.dashboard.RequestSummary;
 import com.school.equipment.dto.equipment.EquipmentResponse;
-import com.school.equipment.entity.BorrowRequest;
 import com.school.equipment.entity.Equipment;
 import com.school.equipment.entity.Status;
 import com.school.equipment.repository.BorrowRequestRepository;
