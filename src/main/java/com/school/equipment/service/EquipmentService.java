@@ -1,9 +1,9 @@
 package com.school.equipment.service;
 
-import com.school.equipment.dto.equipment.CreateRequest;
-import com.school.equipment.dto.equipment.CreateResponse;
+import com.school.equipment.dto.equipment.EquipmentCreateRequest;
+import com.school.equipment.dto.equipment.EquipmentCreateResponse;
 import com.school.equipment.dto.equipment.EquipmentResponse;
-import com.school.equipment.dto.equipment.UpdateRequest;
+import com.school.equipment.dto.equipment.EquipmentUpdateRequest;
 import com.school.equipment.entity.Equipment;
 import com.school.equipment.entity.User;
 import com.school.equipment.repository.EquipmentRepository;
@@ -23,7 +23,7 @@ public class EquipmentService {
     @Autowired
     private UserRepository userRepository;
 
-    public CreateResponse createEquipment(CreateRequest request, Long createdByUserId) {
+    public EquipmentCreateResponse createEquipment(EquipmentCreateRequest request, Long createdByUserId) {
         User createdBy = userRepository.findById(createdByUserId)
             .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -38,13 +38,13 @@ public class EquipmentService {
 
         Equipment savedEquipment = equipmentRepository.save(equipment);
 
-        return new CreateResponse(
+        return new EquipmentCreateResponse(
             savedEquipment.getEquipmentId(),
             "Equipment added successfully"
         );
     }
 
-    public EquipmentResponse updateEquipment(Long equipmentId, UpdateRequest request) {
+    public EquipmentResponse updateEquipment(Long equipmentId, EquipmentUpdateRequest request) {
         Equipment equipment = equipmentRepository.findById(equipmentId)
             .orElseThrow(() -> new RuntimeException("Equipment not found"));
 

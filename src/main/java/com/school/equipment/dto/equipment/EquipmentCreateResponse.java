@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class CreateResponse {
+public class EquipmentCreateResponse {
         private Long equipmentId;
         private String message;
 }

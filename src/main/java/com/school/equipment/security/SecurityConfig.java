@@ -1,5 +1,6 @@
 package com.school.equipment.security;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -10,6 +11,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -21,6 +23,9 @@ import java.util.List;
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
+
+    @Autowired
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -34,18 +39,27 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
+                        // Auth APIs
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/equipment").permitAll()
-                        .requestMatchers("/api/equipment/{id}").hasAnyRole("ADMIN", "STAFF")
-                        .requestMatchers("/api/equipment/**").hasRole("ADMIN")
+
+                        // Equipment APIs - Order matters! More specific rules first
+                        .requestMatchers("/api/equipment").hasAnyRole("ADMIN", "STUDENT", "TEACHER", "LAB_ASSISTANT") // GET all equipment
+                        .requestMatchers("/api/equipment/{id}").hasAnyRole("ADMIN", "STAFF", "STUDENT", "TEACHER", "LAB_ASSISTANT") // GET by ID
+                        // Requests APIs: require authentication and roles
+                        .requestMatchers("/api/requests/**").authenticated()
+
+                        // Swagger UI
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",
                                 "/v3/api-docs.yaml"
                         ).permitAll()
+
+                        // Other endpoints
                         .anyRequest().authenticated()
-                );
+                )
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -62,4 +76,5 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+
 }

@@ -1,9 +1,10 @@
 package com.school.equipment.controller;
 
-import com.school.equipment.dto.equipment.CreateRequest;
-import com.school.equipment.dto.equipment.CreateResponse;
+import com.school.equipment.dto.equipment.EquipmentCreateRequest;
+import com.school.equipment.dto.equipment.EquipmentCreateResponse;
 import com.school.equipment.dto.equipment.EquipmentResponse;
-import com.school.equipment.dto.equipment.UpdateRequest;
+import com.school.equipment.dto.equipment.EquipmentUpdateRequest;
+import com.school.equipment.security.AuthenticationHelper;
 import com.school.equipment.service.EquipmentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -12,6 +13,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -32,18 +35,19 @@ public class EquipmentController {
             description = "Creates a new equipment item in the system",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Equipment created successfully",
-                            content = @Content(schema = @Schema(implementation = CreateResponse.class))),
+                            content = @Content(schema = @Schema(implementation = EquipmentCreateResponse.class))),
                     @ApiResponse(responseCode = "400", description = "Invalid request",
                             content = @Content)
             }
     )
     @PostMapping
-    public ResponseEntity<CreateResponse> addEquipment(
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<EquipmentCreateResponse> addEquipment(
             @Parameter(description = "Equipment creation request", required = true)
-            @Valid @RequestBody CreateRequest request) {
-
-            Long userId = 1L;
-            CreateResponse response = equipmentService.createEquipment(request, userId);
+            @Valid @RequestBody EquipmentCreateRequest request,
+            Authentication authentication) {
+            Long userId = AuthenticationHelper.getUserIdFromAuthentication(authentication);
+            EquipmentCreateResponse response = equipmentService.createEquipment(request, userId);
             return ResponseEntity.ok(response);
 
     }
@@ -63,7 +67,7 @@ public class EquipmentController {
             @Parameter(description = "Equipment ID", required = true)
             @PathVariable Long id,
             @Parameter(description = "Equipment update request", required = true)
-            @Valid @RequestBody UpdateRequest request) {
+            @Valid @RequestBody EquipmentUpdateRequest request) {
 
             EquipmentResponse response = equipmentService.updateEquipment(id, request);
             return ResponseEntity.ok(response);

@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UpdateRequest {
+public class EquipmentUpdateRequest {
 
         private String name;
         private String category;

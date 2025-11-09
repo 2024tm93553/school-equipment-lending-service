@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class CreateRequest {
+public class EquipmentCreateRequest {
     @NotBlank(message = "Equipment name is required")
     private String name;
 
