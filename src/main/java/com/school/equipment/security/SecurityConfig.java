@@ -42,6 +42,9 @@ public class SecurityConfig {
                         // Auth APIs
                         .requestMatchers("/api/auth/**").permitAll()
 
+                        // Dashboard APIs
+                        .requestMatchers("/api/dashboard/**").permitAll()
+
                         // Equipment APIs - Order matters! More specific rules first
                         .requestMatchers("/api/equipment").hasAnyRole("ADMIN", "STUDENT", "TEACHER", "LAB_ASSISTANT") // GET all equipment
                         .requestMatchers("/api/equipment/{id}").hasAnyRole("ADMIN", "STAFF", "STUDENT", "TEACHER", "LAB_ASSISTANT") // GET by ID
