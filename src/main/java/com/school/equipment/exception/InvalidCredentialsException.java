@@ -1,8 +1,7 @@
 package com.school.equipment.exception;
 
-import lombok.AllArgsConstructor;
-
-@AllArgsConstructor
-public class InvalidCredentialsException extends Exception {
-    String message;
+public class InvalidCredentialsException extends RuntimeException {
+    public InvalidCredentialsException(String message) {
+        super(message);
+    }
 }

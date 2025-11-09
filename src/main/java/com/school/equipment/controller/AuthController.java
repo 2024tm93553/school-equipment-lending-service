@@ -4,8 +4,6 @@ import com.school.equipment.dto.user.LoginRequest;
 import com.school.equipment.dto.user.LoginResponse;
 import com.school.equipment.dto.user.RegisterRequest;
 import com.school.equipment.dto.user.UserResponse;
-import com.school.equipment.exception.InvalidCredentialsException;
-import com.school.equipment.exception.UserAlreadyExistsException;
 import com.school.equipment.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -49,7 +47,7 @@ public class AuthController {
             )
     })
     @PostMapping("/signup")
-    public ResponseEntity<UserResponse> signup(@Valid @RequestBody RegisterRequest request) throws UserAlreadyExistsException {
+    public ResponseEntity<UserResponse> signup(@Valid @RequestBody RegisterRequest request) {
         log.info("Signup request received for username: {}", request.getUsername());
         UserResponse response = authService.register(request);
         return ResponseEntity.ok(response);
@@ -75,7 +73,7 @@ public class AuthController {
             )
     })
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) throws InvalidCredentialsException {
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         log.info("Login request received for username: {}", request.getUsername());
         LoginResponse response = authService.login(request);
         return ResponseEntity.ok(response);

@@ -5,6 +5,7 @@ import com.school.equipment.dto.user.LoginResponse;
 import com.school.equipment.dto.user.RegisterRequest;
 import com.school.equipment.dto.user.UserResponse;
 import com.school.equipment.entity.User;
+import com.school.equipment.exception.EmailAlreadyExistsException;
 import com.school.equipment.exception.InvalidCredentialsException;
 import com.school.equipment.exception.UserAlreadyExistsException;
 import com.school.equipment.repository.UserRepository;
@@ -29,7 +30,7 @@ public class AuthService {
         this.jwtUtil = jwtUtil;
     }
 
-    public UserResponse register(RegisterRequest request) throws UserAlreadyExistsException {
+    public UserResponse register(RegisterRequest request) {
         log.info("Registration attempt for username: {}", request.getUsername());
 
         if (userRepository.existsByUsername(request.getUsername())) {
@@ -39,7 +40,7 @@ public class AuthService {
 
         if (request.getEmail() != null && userRepository.existsByEmail(request.getEmail())) {
             log.warn("Registration failed - email already exists: {}", request.getEmail());
-            throw new RuntimeException("Email already exists");
+            throw new EmailAlreadyExistsException("Email already exists");
         }
 
         User user = new User();
@@ -62,7 +63,7 @@ public class AuthService {
         );
     }
 
-    public LoginResponse login(LoginRequest request) throws InvalidCredentialsException {
+    public LoginResponse login(LoginRequest request) {
         log.info("Login attempt for username: {}", request.getUsername());
 
         User user = userRepository.findByUsername(request.getUsername())

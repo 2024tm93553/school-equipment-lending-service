@@ -6,6 +6,7 @@ import com.school.equipment.dto.equipment.EquipmentResponse;
 import com.school.equipment.dto.equipment.EquipmentUpdateRequest;
 import com.school.equipment.entity.Equipment;
 import com.school.equipment.entity.User;
+import com.school.equipment.exception.ResourceNotFoundException;
 import com.school.equipment.repository.EquipmentRepository;
 import com.school.equipment.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +33,7 @@ public class EquipmentService {
         User createdBy = userRepository.findById(createdByUserId)
             .orElseThrow(() -> {
                 log.error("Failed to create equipment - user not found: {}", createdByUserId);
-                return new RuntimeException("User not found");
+                return new ResourceNotFoundException("User not found with id: " + createdByUserId);
             });
 
         Equipment equipment = new Equipment();
@@ -61,7 +62,7 @@ public class EquipmentService {
         Equipment equipment = equipmentRepository.findById(equipmentId)
             .orElseThrow(() -> {
                 log.error("Failed to update equipment - equipment not found: {}", equipmentId);
-                return new RuntimeException("Equipment not found");
+                return new ResourceNotFoundException("Equipment not found with id: " + equipmentId);
             });
 
         if (request.getName() != null) {
@@ -94,7 +95,7 @@ public class EquipmentService {
 
         if (!equipmentRepository.existsById(equipmentId)) {
             log.error("Failed to delete equipment - equipment not found: {}", equipmentId);
-            throw new RuntimeException("Equipment not found");
+            throw new ResourceNotFoundException("Equipment not found with id: " + equipmentId);
         }
         equipmentRepository.deleteById(equipmentId);
         log.info("Equipment deleted successfully - equipmentId: {}", equipmentId);
@@ -106,7 +107,7 @@ public class EquipmentService {
         Equipment equipment = equipmentRepository.findById(equipmentId)
             .orElseThrow(() -> {
                 log.error("Equipment not found: {}", equipmentId);
-                return new RuntimeException("Equipment not found");
+                return new ResourceNotFoundException("Equipment not found with id: " + equipmentId);
             });
         return mapToResponse(equipment);
     }
